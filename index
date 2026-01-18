@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Special Room Check-Mate</title>
+    <style>
+        :root {
+            --primary: #1a73e8; --fixed-bg: #f1f3f4; --booked-bg: #e8f0fe;
+            --empty-bg: #e6f4ea; --empty-text: #137333; --border: #dadce0;
+        }
+        body { font-family: 'Pretendard', sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; color: #3c4043; }
+        .container { max-width: 900px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(60,64,67,0.3); overflow: hidden; }
+        
+        /* 헤더 영역 */
+        .header { background: var(--primary); color: white; padding: 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 22px; }
+        .header p { margin: 5px 0 0; font-size: 14px; opacity: 0.9; }
+
+        /* 탭 메뉴 (특별실 선택) */
+        .nav-tabs { display: flex; background: #fff; border-bottom: 1px solid var(--border); padding: 0 10px; overflow-x: auto; }
+        .tab { padding: 15px 20px; cursor: pointer; border-bottom: 3px solid transparent; transition: 0.2s; white-space: nowrap; font-weight: 500; }
+        .tab:hover { background: #f1f3f4; }
+        .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+        /* 설정 영역 (날짜/안내) */
+        .control-panel { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        input[type="date"] { padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; font-size: 16px; }
+        .legend { display: flex; gap: 15px; font-size: 12px; }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+        /* 시간표 테이블 */
+        .schedule-table { width: 100%; border-collapse: collapse; }
+        .schedule-table th { background: #f8f9fa; padding: 12px; border-bottom: 2px solid var(--border); font-size: 13px; }
+        .schedule-table td { padding: 15px; border-bottom: 1px solid var(--border); text-align: center; transition: 0.2s; }
+
+        /* 상태별 스타일 */
+        .status-fixed { background-color: var(--fixed-bg); color: #70757a; font-size: 14px; cursor: not-allowed; }
+        .status-booked { background-color: var(--booked-bg); color: var(--primary); font-weight: 600; cursor: default; }
+        .status-empty { background-color: var(--empty-bg); color: var(--empty-text); font-weight: 500; cursor: pointer; }
+        .status-empty:hover { background-color: #d2e3d5; }
+
+        .btn-reserve { font-size: 12px; padding: 4px 8px; background: var(--empty-text); color: white; border-radius: 4px; border: none; margin-top: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>📅 특별실 스마트 스케줄러</h1>
+        <p>학기 말 특별실 중복 사용 방지 및 실시간 예약 시스템</p>
+    </div>
+
+    <div class="nav-tabs">
+        <div class="tab active" onclick="selectRoom('체육관', this)">🏀 체육관</div>
+        <div class="tab" onclick="selectRoom('컴퓨터실', this)">💻 컴퓨터실</div>
+        <div class="tab" onclick="selectRoom('건강체력교실(4층)', this)">🏃 건강체력(4F)</div>
+        <div class="tab" onclick="selectRoom('건강체력교실(5층)', this)">🏃 건강체력(5F)</div>
+        <div class="tab" onclick="selectRoom('미술실', this)">🎨 미술실</div>
+    </div>
+
+    <div class="control-panel">
+        <div>
+            <label style="font-weight: bold; margin-right: 10px;">날짜 선택:</label>
+            <input type="date" id="dateInput" value="2026-01-19">
+        </div>
+        <div class="legend">
+            <div class="legend-item"><span class="dot" style="background:#f1f3f4"></span>고정수업</div>
+            <div class="legend-item"><span class="dot" style="background:#e8f0fe"></span>예약완료</div>
+            <div class="legend-item"><span class="dot" style="background:#e6f4ea"></span>신청가능</div>
+        </div>
+    </div>
+
+    <table class="schedule-table">
+        <thead>
+            <tr>
+                <th width="15%">교시</th>
+                <th width="50%">사용 현황</th>
+                <th width="35%">사용자 및 목적</th>
+            </tr>
+        </thead>
+        <tbody id="scheduleBody">
+            <tr class="status-fixed">
+                <td>1교시</td>
+                <td>정규 수업 (고정)</td>
+                <td>4-1 (체육)</td>
+            </tr>
+            <tr class="status-booked">
+                <td>2교시</td>
+                <td>학기 말 활동 예약</td>
+                <td>6-2 (졸업식 연습)</td>
+            </tr>
+            <tr class="status-empty" onclick="handleReserve(3)">
+                <td>3교시</td>
+                <td>비어 있음</td>
+                <td><button class="btn-reserve">신청하기</button></td>
+            </tr>
+            <tr class="status-empty" onclick="handleReserve(4)"><td>4교시</td><td>비어 있음</td><td><button class="btn-reserve">신청하기</button></td></tr>
+            <tr class="status-fixed"><td>5교시</td><td>정규 수업 (고정)</td><td>5-2 (체육)</td></tr>
+            <tr class="status-empty" onclick="handleReserve(6)"><td>6교시</td><td>비어 있음</td><td><button class="btn-reserve">신청하기</button></td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function selectRoom(roomName, el) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        // 실제로는 여기서 서버에 데이터를 요청(google.script.run)하게 됩니다.
+        console.log(roomName + " 데이터 로드 중...");
+    }
+
+    function handleReserve(period) {
+        alert(period + "교시 예약을 진행합니다.\n실제 구현 시 예약 팝업창이 뜹니다.");
+    }
+</script>
+
+</body>
+</html>
